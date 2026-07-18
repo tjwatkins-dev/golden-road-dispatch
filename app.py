@@ -1,65 +1,82 @@
 import streamlit as st
 import pandas as pd
 import weasyprint
-import base64
+import json
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Golden Road Dispatch App", layout="wide", page_icon="✈️")
 
 st.title("The Golden Road: Flight Dispatch & Kneeboard Generator")
-st.markdown("Enter your flight details below. Your custom analog VFR kneeboard will be generated as a print-ready PDF.")
+
+# --- JSON Uploader ---
+st.markdown("### 📥 Import Flight Plan")
+uploaded_file = st.file_uploader("Upload your flightplan.json file to auto-fill the kneeboard", type=["json"])
+
+# Default empty data structures
+dispatch_data = {
+    "aircraft": "PA-28-161 (Warrior II)", "departure": "", "callsign": "N4302V", 
+    "destination": "", "cruise_alt": "", "fuel_usable": "", 
+    "est_ete": "", "est_burn": "", "leg_title": "Analog VFR Transit"
+}
+
+freq_data_list = [
+    {"Facility": "DEP ATIS", "Freq": ""}, {"Facility": "DEP TWR", "Freq": ""},
+    {"Facility": "DEP GND", "Freq": ""}, {"Facility": "DEP APP", "Freq": ""},
+    {"Facility": "NAV 1 (VOR)", "Freq": ""}, {"Facility": "NAV 2 (VOR)", "Freq": ""},
+    {"Facility": "ARR ATIS", "Freq": ""}, {"Facility": "ARR TWR", "Freq": ""},
+    {"Facility": "ARR GND", "Freq": ""}
+]
+
+nav_data_list = [
+    {"Waypoint": "", "Nav Freq": "", "Radial": "", "Heading": "", "Alt": "", "Dist": "", "ETE": "", "Remarks": ""}
+]
+
+# If a file is uploaded, overwrite defaults with JSON data
+if uploaded_file is not None:
+    try:
+        imported_data = json.load(uploaded_file)
+        dispatch_data = imported_data.get("dispatch", dispatch_data)
+        freq_data_list = imported_data.get("frequencies", freq_data_list)
+        nav_data_list = imported_data.get("nav_log", nav_data_list)
+        st.success("Flight plan loaded successfully! Review the data below.")
+    except Exception as e:
+        st.error(f"Error reading JSON file: {e}")
 
 # --- UI: Dispatch Details ---
 st.header("1. Flight Dispatch Details")
 col1, col2, col3, col4 = st.columns(4)
 with col1:
-    aircraft = st.text_input("Aircraft", value="PA-28-161 (Warrior II)")
-    departure = st.text_input("Departure (ICAO)", value="KAKR")
+    aircraft = st.text_input("Aircraft", value=dispatch_data["aircraft"])
+    departure = st.text_input("Departure (ICAO)", value=dispatch_data["departure"])
 with col2:
-    callsign = st.text_input("Callsign", value="N4302V")
-    destination = st.text_input("Destination (ICAO)", value="KINT")
+    callsign = st.text_input("Callsign", value=dispatch_data["callsign"])
+    destination = st.text_input("Destination (ICAO)", value=dispatch_data["destination"])
 with col3:
-    cruise_alt = st.text_input("Cruise Altitude", value="7,500' (VFR)")
-    fuel_usable = st.text_input("Fuel Usable", value="48 US Gal")
+    cruise_alt = st.text_input("Cruise Altitude", value=dispatch_data["cruise_alt"])
+    fuel_usable = st.text_input("Fuel Usable", value=dispatch_data["fuel_usable"])
 with col4:
-    est_ete = st.text_input("Estimated ETE", value="2h 35m")
-    est_burn = st.text_input("Estimated Burn", value="22.0 Gal")
+    est_ete = st.text_input("Estimated ETE", value=dispatch_data["est_ete"])
+    est_burn = st.text_input("Estimated Burn", value=dispatch_data["est_burn"])
 
-leg_title = st.text_input("Leg Title / Description", value="Leg 1: Coal to Hills")
+leg_title = st.text_input("Leg Title / Description", value=dispatch_data["leg_title"])
 
 # --- UI: Frequencies ---
 st.header("2. Primary Frequencies")
-freq_df = pd.DataFrame([
-    {"Facility": "DEP ATIS", "Freq": "126.85"},
-    {"Facility": "DEP TWR", "Freq": "118.30"},
-    {"Facility": "DEP GND", "Freq": "121.70"},
-    {"Facility": "DEP APP", "Freq": "118.25"},
-    {"Facility": "NAV 1 (VOR)", "Freq": "114.20"},
-    {"Facility": "NAV 2 (VOR)", "Freq": "110.80"},
-    {"Facility": "ARR ATIS", "Freq": "121.05"},
-    {"Facility": "ARR TWR", "Freq": "118.50"},
-    {"Facility": "ARR GND", "Freq": "121.90"}
-])
+freq_df = pd.DataFrame(freq_data_list)
 freq_data = st.data_editor(freq_df, num_rows="dynamic", use_container_width=True)
 
 # --- UI: Navigation Log ---
 st.header("3. Analog Navigation Log (Dead-Reckoning)")
-nav_df = pd.DataFrame([
-    {"Waypoint": "KAKR", "Nav Freq": "--", "Radial": "--", "Heading": "--", "Alt": "1,067'", "Dist": "0", "ETE": "0:00", "Remarks": "Akron Fulton Departure"},
-    {"Waypoint": "CANTON", "Nav Freq": "114.40", "Radial": "ACO R-175", "Heading": "180°", "Alt": "3,500'", "Dist": "12", "ETE": "0:08", "Remarks": "Visual: Stadium"},
-    {"Waypoint": "KINT", "Nav Freq": "--", "Radial": "--", "Heading": "155°", "Alt": "1,970'", "Dist": "20", "ETE": "0:11", "Remarks": "Winston-Salem Arrival"}
-])
+nav_df = pd.DataFrame(nav_data_list)
 nav_data = st.data_editor(nav_df, num_rows="dynamic", use_container_width=True)
 
 # --- PDF Generation Engine ---
 st.header("4. Generate Kneeboard")
 if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
     
-    # Build Frequency Table HTML
     freq_headers = "".join([f"<th>{row['Facility']}</th>" for _, row in freq_data.iterrows()])
     freq_values = "".join([f"<td>{row['Freq']}</td>" for _, row in freq_data.iterrows()])
     
-    # Build Nav Log Table HTML
     nav_rows = ""
     for _, row in nav_data.iterrows():
         nav_rows += f"""
@@ -77,7 +94,6 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
         </tr>
         """
 
-    # Core HTML/CSS Template
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -201,13 +217,9 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
     </html>
     """
 
-    # Generate PDF using WeasyPrint
     try:
         pdf_bytes = weasyprint.HTML(string=html_content).write_pdf()
-        
         st.success("✅ Kneeboard generated successfully!")
-        
-        # Provide Download Button
         st.download_button(
             label="⬇️ Download Kneeboard PDF",
             data=pdf_bytes,
