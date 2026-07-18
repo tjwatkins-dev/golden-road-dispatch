@@ -2,15 +2,19 @@ import streamlit as st
 import pandas as pd
 import weasyprint
 import json
+import requests
+import re
 
 # --- Page Configuration ---
 st.set_page_config(page_title="Golden Road Dispatch App", layout="wide", page_icon="✈️")
 
 st.title("The Golden Road: Flight Dispatch & Kneeboard Generator")
 
-# --- JSON Uploader ---
+# --- Import Methods ---
 st.markdown("### 📥 Import Flight Plan")
-uploaded_file = st.file_uploader("Upload your flightplan.json file to auto-fill the kneeboard", type=["json"])
+import_method = st.radio("Choose how to load your flight data:", 
+                         ["Upload JSON File", "Paste Google Drive Link", "Paste Raw JSON Text"], 
+                         horizontal=True)
 
 # Default empty data structures
 dispatch_data = {
@@ -31,16 +35,49 @@ nav_data_list = [
     {"Waypoint": "", "Nav Freq": "", "Radial": "", "Heading": "", "Alt": "", "Dist": "", "ETE": "", "Remarks": ""}
 ]
 
-# If a file is uploaded, overwrite defaults with JSON data
-if uploaded_file is not None:
-    try:
-        imported_data = json.load(uploaded_file)
-        dispatch_data = imported_data.get("dispatch", dispatch_data)
-        freq_data_list = imported_data.get("frequencies", freq_data_list)
-        nav_data_list = imported_data.get("nav_log", nav_data_list)
-        st.success("Flight plan loaded successfully! Review the data below.")
-    except Exception as e:
-        st.error(f"Error reading JSON file: {e}")
+imported_data = None
+
+# Logic for the 3 different import methods
+if import_method == "Upload JSON File":
+    uploaded_file = st.file_uploader("Select a .json file", type=["json"])
+    if uploaded_file is not None:
+        try:
+            imported_data = json.load(uploaded_file)
+        except Exception as e:
+            st.error(f"Error reading JSON file: {e}")
+
+elif import_method == "Paste Google Drive Link":
+    drive_url = st.text_input("Paste the Google Drive 'Anyone with the link' URL:")
+    if drive_url:
+        match = re.search(r'/d/([a-zA-Z0-9_-]+)', drive_url)
+        if match:
+            file_id = match.group(1)
+            download_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+            try:
+                resp = requests.get(download_url)
+                if resp.status_code == 200:
+                    imported_data = resp.json()
+                else:
+                    st.error("Could not fetch the file. Ensure the Google Drive link is set to 'Anyone with the link'.")
+            except Exception as e:
+                st.error(f"Error fetching from Google Drive: {e}")
+        else:
+            st.error("Invalid Google Drive link format.")
+
+elif import_method == "Paste Raw JSON Text":
+    raw_text = st.text_area("Paste the generated JSON code block here:", height=150)
+    if raw_text:
+        try:
+            imported_data = json.loads(raw_text)
+        except Exception as e:
+            st.error(f"Invalid JSON format. Check for missing brackets or quotes: {e}")
+
+# Apply imported data if successful
+if imported_data:
+    dispatch_data = imported_data.get("dispatch", dispatch_data)
+    freq_data_list = imported_data.get("frequencies", freq_data_list)
+    nav_data_list = imported_data.get("nav_log", nav_data_list)
+    st.success("✅ Flight plan loaded successfully! Review the data below.")
 
 # --- UI: Dispatch Details ---
 st.header("1. Flight Dispatch Details")
