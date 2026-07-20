@@ -191,10 +191,10 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
             </tr>
         </table>
         
-        <table class="layout-table">
+       <table class="layout-table">
             <tr>
                 <td class="layout-cell" style="width: 50%; padding-right: 4px;">
-                    <div class="panel" style="height: 108px;">
+                    <div class="panel"> <!-- REMOVED HEIGHT ATTRIBUTE HERE -->
                         <div class="panel-title"><span>01</span> Flight Dispatch & Aircraft</div>
                         <table class="field-grid">
                             <tr><td class="field-label">Aircraft</td><td class="field-value">{aircraft}</td><td class="field-label">Callsign</td><td class="field-value">{callsign}</td></tr>
@@ -205,7 +205,7 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
                     </div>
                 </td>
                 <td class="layout-cell" style="width: 50%; padding-left: 4px;">
-                    <div class="panel" style="height: 108px;">
+                    <div class="panel"> <!-- REMOVED HEIGHT ATTRIBUTE HERE -->
                         <div class="panel-title"><span>02</span> SayIntentions.AI Clearance / CRAFT</div>
                         <div style="font-family: monospace; font-size: 7.5pt; color: #333;">
                             <strong>C</strong> (Clnc Limit): <span style="border-bottom: 1px solid #999; display: inline-block; width: 140px; height: 12px;"></span><br>
