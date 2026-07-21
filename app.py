@@ -20,7 +20,8 @@ import_method = st.radio("Choose how to load your flight data:",
 dispatch_data = {
     "aircraft": "PA-28-161 (Warrior II)", "departure": "", "callsign": "N4302V", 
     "destination": "", "cruise_alt": "", "fuel_usable": "", 
-    "est_ete": "", "est_burn": "", "leg_title": "Analog VFR Transit"
+    "est_ete": "", "est_burn": "", "leg_title": "Analog VFR Transit",
+    "simbrief_route": ""
 }
 
 freq_data_list = [
@@ -96,6 +97,7 @@ with col4:
     est_burn = st.text_input("Estimated Burn", value=dispatch_data["est_burn"])
 
 leg_title = st.text_input("Leg Title / Description", value=dispatch_data["leg_title"])
+simbrief_route = st.text_area("SimBrief VFR Routing String (Copy / Paste)", value=dispatch_data.get("simbrief_route", ""), height=68)
 
 # --- UI: Frequencies ---
 st.header("2. Primary Frequencies")
@@ -191,10 +193,18 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
             </tr>
         </table>
         
-       <table class="layout-table">
+        <!-- SimBrief Routing String Panel -->
+        <div class="panel" style="margin-bottom: 6px;">
+            <div class="panel-title"><span>SIMBRIEF</span> VFR Routing String (Copy / Paste Field)</div>
+            <div style="font-family: monospace; font-size: 7.5pt; background: #ffffff; padding: 4px 6px; border: 1px solid #e5e0cc; letter-spacing: 0.2px; word-break: break-all; color: #111;">
+                {simbrief_route}
+            </div>
+        </div>
+        
+        <table class="layout-table">
             <tr>
                 <td class="layout-cell" style="width: 50%; padding-right: 4px;">
-                    <div class="panel"> <!-- REMOVED HEIGHT ATTRIBUTE HERE -->
+                    <div class="panel">
                         <div class="panel-title"><span>01</span> Flight Dispatch & Aircraft</div>
                         <table class="field-grid">
                             <tr><td class="field-label">Aircraft</td><td class="field-value">{aircraft}</td><td class="field-label">Callsign</td><td class="field-value">{callsign}</td></tr>
@@ -205,7 +215,7 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
                     </div>
                 </td>
                 <td class="layout-cell" style="width: 50%; padding-left: 4px;">
-                    <div class="panel"> <!-- REMOVED HEIGHT ATTRIBUTE HERE -->
+                    <div class="panel">
                         <div class="panel-title"><span>02</span> SayIntentions.AI Clearance / CRAFT</div>
                         <div style="font-family: monospace; font-size: 7.5pt; color: #333;">
                             <strong>C</strong> (Clnc Limit): <span style="border-bottom: 1px solid #999; display: inline-block; width: 140px; height: 12px;"></span><br>
