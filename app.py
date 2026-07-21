@@ -18,9 +18,9 @@ import_method = st.radio("Choose how to load your flight data:",
 
 # Default empty data structures
 dispatch_data = {
-    "aircraft": "PA-28-161 (Warrior II)", "departure": "", "callsign": "N4302V", 
-    "destination": "", "cruise_alt": "", "fuel_usable": "", 
-    "est_ete": "", "est_burn": "", "leg_title": "Analog VFR Transit",
+    "aircraft": "PA-28-161 (Warrior II)", "departure": "", "departure_name": "", 
+    "callsign": "N4302V", "destination": "", "destination_name": "", "cruise_alt": "", 
+    "fuel_usable": "", "est_ete": "", "est_burn": "", "leg_title": "Analog VFR Transit",
     "simbrief_route": ""
 }
 
@@ -86,9 +86,11 @@ col1, col2, col3, col4 = st.columns(4)
 with col1:
     aircraft = st.text_input("Aircraft", value=dispatch_data["aircraft"])
     departure = st.text_input("Departure (ICAO)", value=dispatch_data["departure"])
+    departure_name = st.text_input("Departure Name", value=dispatch_data.get("departure_name", ""))
 with col2:
     callsign = st.text_input("Callsign", value=dispatch_data["callsign"])
     destination = st.text_input("Destination (ICAO)", value=dispatch_data["destination"])
+    destination_name = st.text_input("Destination Name", value=dispatch_data.get("destination_name", ""))
 with col3:
     cruise_alt = st.text_input("Cruise Altitude", value=dispatch_data["cruise_alt"])
     fuel_usable = st.text_input("Fuel Usable", value=dispatch_data["fuel_usable"])
@@ -144,7 +146,7 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
         body {{ font-family: sans-serif; color: #2b2b2b; margin: 0; padding: 0; font-size: 8.5pt; background-color: #FAF8F5; }}
         
         .header-table {{ width: 100%; border-collapse: collapse; margin-bottom: 5px; }}
-        .header-logo {{ background-color: #1a252c; color: #e9c46a; padding: 8px 12px; border-radius: 4px 0 0 4px; }}
+        .header-logo {{ background-color: #1a252c; color: #e9c46a; padding: 8mm; border-radius: 4px 0 0 4px; }}
         .header-logo h1 {{ margin: 0; font-size: 14pt; font-weight: 800; text-transform: uppercase; color: #e9c46a; }}
         .header-logo p {{ margin: 2px 0 0 0; font-size: 7.5pt; font-style: italic; color: #f4f1de; }}
         .header-meta {{ background-color: #e9c46a; color: #1a252c; padding: 8px 12px; text-align: right; border-radius: 0 4px 4px 0; width: 35%; }}
@@ -189,6 +191,7 @@ if st.button("Generate Pilot's Kneeboard PDF", type="primary"):
                 <td class="header-meta">
                     <h2>{leg_title}</h2>
                     <p>{departure} &rarr; {destination}</p>
+                    <p style="font-size: 6.5pt; font-weight: normal; margin-top: 2px;">{departure_name} &rarr; {destination_name}</p>
                 </td>
             </tr>
         </table>
